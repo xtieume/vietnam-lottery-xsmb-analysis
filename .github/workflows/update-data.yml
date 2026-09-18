@@ -7,7 +7,6 @@ on:
 
 jobs:
   update-data:
-    if: github.repository_owner == 'khiemdoan'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo content
