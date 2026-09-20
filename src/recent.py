@@ -61,3 +61,12 @@ def build_recent(
     dates = sorted(data.keys(), reverse=True)[:keep]
     draws = [to_recent_draw(data[d], publish_times.get(d, DEFAULT_PUBLISHED_AT)) for d in dates]
     return RecentFile(generatedAt=now.isoformat(timespec='seconds'), draws=draws)
+
+
+def record_publish_time(times: dict[date, str], d: date, now: datetime) -> str:
+    existing = times.get(d)
+    if existing is not None:
+        return existing
+    stamp = now.strftime('%H:%M')
+    times[d] = stamp
+    return stamp

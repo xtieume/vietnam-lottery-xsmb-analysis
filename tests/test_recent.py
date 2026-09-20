@@ -2,7 +2,7 @@ from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 from dtos import Result
-from recent import DEFAULT_PUBLISHED_AT, build_recent, to_recent_draw
+from recent import DEFAULT_PUBLISHED_AT, build_recent, record_publish_time, to_recent_draw
 
 
 def sample_result(d: date) -> Result:
@@ -47,3 +47,12 @@ def test_published_at_backfill():
 def test_generated_at_iso():
     recent = build_recent({}, {}, now=datetime(2026, 9, 19, 18, 35, 12, tzinfo=ZoneInfo('Asia/Ho_Chi_Minh')))
     assert recent.generatedAt == '2026-09-19T18:35:12+07:00'
+
+
+def test_record_publish_time_khong_de_len_ban_ghi_cu():
+    times = {date(2026, 9, 18): '18:35'}
+    first = record_publish_time(times, date(2026, 9, 19), datetime(2026, 9, 19, 18, 36, tzinfo=ZoneInfo('Asia/Ho_Chi_Minh')))
+    assert first == '18:36'
+    again = record_publish_time(times, date(2026, 9, 19), datetime(2026, 9, 19, 19, 10, tzinfo=ZoneInfo('Asia/Ho_Chi_Minh')))
+    assert again == '18:36'  # kỳ đã có giờ rồi thì giữ giờ ĐẦU TIÊN ghi nhận
+    assert times == {date(2026, 9, 18): '18:35', date(2026, 9, 19): '18:36'}

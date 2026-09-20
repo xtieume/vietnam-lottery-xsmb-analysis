@@ -2,8 +2,10 @@ __author__ = 'Khiem Doan'
 __github__ = 'https://github.com/khiemdoan'
 __email__ = 'doankhiem.crazy@gmail.com'
 
+import json
 from copy import copy
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -11,6 +13,7 @@ from bs4 import BeautifulSoup
 from cloudscraper import CloudScraper
 
 from dtos import Result, ResultList
+from recent import build_recent, record_publish_time
 
 
 class Lottery:
@@ -18,6 +21,7 @@ class Lottery:
         self._http = CloudScraper()
 
         self._data: dict[date, Result] = {}
+        self._publish_times: dict[date, str] = {}
 
         self._raw_data: pd.DataFrame = pd.DataFrame()
         self._2_digits_data: pd.DataFrame = pd.DataFrame()
@@ -32,6 +36,12 @@ class Lottery:
         for d in data.root:
             self._data[d.date] = d
 
+        try:
+            with open('data/xsmb-publish-times.json', 'r', encoding='utf-8') as f:
+                self._publish_times = {date.fromisoformat(k): v for k, v in json.load(f).items()}
+        except FileNotFoundError:
+            pass
+
         self.generate_dataframes()
 
     def dump(self) -> None:
@@ -43,6 +53,12 @@ class Lottery:
         _dump(self._raw_data, 'xsmb')
         _dump(self._2_digits_data, 'xsmb-2-digits')
         _dump(self._sparse_data, 'xsmb-sparse')
+
+        recent = build_recent(self._data, self._publish_times, datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')))
+        with open('data/xsmb-recent.json', 'w', encoding='utf-8') as f:
+            f.write(recent.model_dump_json(indent=2))
+        with open('data/xsmb-publish-times.json', 'w', encoding='utf-8') as f:
+            json.dump({d.isoformat(): t for d, t in self._publish_times.items()}, f, ensure_ascii=False, indent=2)
 
     def fetch(self, selected_date: date) -> None:
         url = f'https://xoso.com.vn/xsmb-{selected_date:%d-%m-%Y}.html'
@@ -82,6 +98,7 @@ class Lottery:
             prize7_1=prize7[0], prize7_2=prize7[1], prize7_3=prize7[2], prize7_4=prize7[3],
         )
         self._data[result.date] = result
+        record_publish_time(self._publish_times, result.date, datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')))
 
     def generate_dataframes(self) -> None:
         self._raw_data = pd.DataFrame([d.model_dump() for d in self._data.values()])
