@@ -39,7 +39,7 @@ class Lottery:
         try:
             with open('data/xsmb-publish-times.json', 'r', encoding='utf-8') as f:
                 self._publish_times = {date.fromisoformat(k): v for k, v in json.load(f).items()}
-        except FileNotFoundError:
+        except (OSError, ValueError, AttributeError):
             pass
 
         self.generate_dataframes()
