@@ -3,7 +3,13 @@ name: Update data
 on:
   workflow_dispatch:
   schedule:
-    - cron: 35 11 * * * # 6:35 PM in Vietnam
+    # Vietnam time. The draw airs 18:15-18:30; extra slots retry on late or
+    # failed runs. The workflow exits quietly when there is nothing new.
+    - cron: 20 11 * * * # 18:20
+    - cron: 35 11 * * * # 18:35
+    - cron: 50 11 * * * # 18:50
+    - cron: 10 12 * * * # 19:10
+    - cron: 30 12 * * * # 19:30
 
 jobs:
   update-data:
@@ -21,7 +27,13 @@ jobs:
         run: uv sync --frozen --no-dev --no-install-project
 
       - name: Fetch data
-        run: uv run src/fetch.py
+        run: |
+          for i in 1 2 3; do
+            uv run src/fetch.py && exit 0
+            echo "fetch attempt $i failed"
+            [ "$i" = 3 ] && exit 1
+            sleep 60
+          done
 
       - name: Analyze data
         run: uv run src/analyze.py
@@ -38,3 +50,12 @@ jobs:
           git add .
           git commit -m "Updated $(date +'%Y-%m-%d')"
           git push origin main
+
+      # Relayed to the admin's Telegram by the Worker's /api/log endpoint.
+      - name: Alert on failure
+        if: failure()
+        run: |
+          curl -sf -X POST https://tv.launchpad2.app/api/log \
+            -H 'Content-Type: application/json' \
+            -d "{\"device\":\"github-actions\",\"app\":\"xsmb-crawl\",\"source\":\"launchpadtv\",\"log\":\"update-data.yml run ${GITHUB_RUN_ID} failed on ${GITHUB_REF} at $(date -u +%Y-%m-%dT%H:%M:%SZ). https://github.com/xtieume/vietnam-lottery-xsmb-analysis/actions/runs/${GITHUB_RUN_ID}\"}" \
+            || echo "alert delivery failed too"
