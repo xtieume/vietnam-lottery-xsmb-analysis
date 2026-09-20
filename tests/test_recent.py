@@ -51,8 +51,10 @@ def test_generated_at_iso():
 
 def test_record_publish_time_khong_de_len_ban_ghi_cu():
     times = {date(2026, 9, 18): '18:35'}
-    first = record_publish_time(times, date(2026, 9, 19), datetime(2026, 9, 19, 18, 36, tzinfo=ZoneInfo('Asia/Ho_Chi_Minh')))
+    first = record_publish_time(
+        times, date(2026, 9, 19), datetime(2026, 9, 19, 18, 36, tzinfo=ZoneInfo('Asia/Ho_Chi_Minh')))
     assert first == '18:36'
-    again = record_publish_time(times, date(2026, 9, 19), datetime(2026, 9, 19, 19, 10, tzinfo=ZoneInfo('Asia/Ho_Chi_Minh')))
+    again = record_publish_time(
+        times, date(2026, 9, 19), datetime(2026, 9, 19, 19, 10, tzinfo=ZoneInfo('Asia/Ho_Chi_Minh')))
     assert again == '18:36'  # kỳ đã có giờ rồi thì giữ giờ ĐẦU TIÊN ghi nhận
     assert times == {date(2026, 9, 18): '18:35', date(2026, 9, 19): '18:36'}
