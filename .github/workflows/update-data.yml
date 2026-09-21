@@ -3,7 +3,13 @@ name: Update data
 on:
   workflow_dispatch:
   schedule:
-    - cron: 35 11 * * * # 6:35 PM in Vietnam
+    # Vietnam time. The draw airs 18:15-18:30; extra slots retry on late or
+    # failed runs. The workflow exits quietly when there is nothing new.
+    - cron: 20 11 * * * # 18:20
+    - cron: 35 11 * * * # 18:35
+    - cron: 50 11 * * * # 18:50
+    - cron: 10 12 * * * # 19:10
+    - cron: 30 12 * * * # 19:30
 
 jobs:
   update-data:
@@ -21,7 +27,13 @@ jobs:
         run: uv sync --frozen --no-dev --no-install-project
 
       - name: Fetch data
-        run: uv run src/fetch.py
+        run: |
+          for i in 1 2 3; do
+            uv run src/fetch.py && exit 0
+            echo "fetch attempt $i failed"
+            [ "$i" = 3 ] && exit 1
+            sleep 60
+          done
 
       - name: Analyze data
         run: uv run src/analyze.py
