@@ -1,15 +1,9 @@
 name: Update data
 
 on:
+  # Triggered only by the LaunchPad TV Cloudflare Worker cron (every 10 minutes,
+  # 18:10-19:30 Vietnam time). GitHub's own schedule ran hours late, so it is gone.
   workflow_dispatch:
-  schedule:
-    # Vietnam time. The draw airs 18:15-18:30; extra slots retry on late or
-    # failed runs. The workflow exits quietly when there is nothing new.
-    - cron: 20 11 * * * # 18:20
-    - cron: 35 11 * * * # 18:35
-    - cron: 50 11 * * * # 18:50
-    - cron: 10 12 * * * # 19:10
-    - cron: 30 12 * * * # 19:30
 
 jobs:
   update-data:
