@@ -5,6 +5,11 @@ on:
   # 18:10-19:30 Vietnam time). GitHub's own schedule ran hours late, so it is gone.
   workflow_dispatch:
 
+# Overlapping dispatches race on `git push`; run them one at a time instead.
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
 jobs:
   update-data:
     runs-on: ubuntu-latest
