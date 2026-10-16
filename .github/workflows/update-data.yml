@@ -39,13 +39,21 @@ jobs:
 
       - name: Commit changes
         run: |
-          if git diff --quiet; then
+          git add -A
+          if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
 
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git add .
           git commit -m "Updated $(date +'%Y-%m-%d')"
-          git push origin main
+
+          # main may move while we run (another run, a merged PR): rebase and retry.
+          # On conflicting generated files keep ours, they come from the newest fetch.
+          for i in 1 2 3; do
+            git push origin HEAD:main && exit 0
+            echo "push attempt $i rejected, rebasing"
+            git pull --rebase -X theirs origin main
+          done
+          exit 1
